@@ -751,7 +751,7 @@
       
       <ul>
         <li><strong>Light Mode</strong>... switches between dark and light theme.</li>
-        <li><strong>Show Headings</strong>... the document has topic headings scattered through it. Turn this on for a structured reading experience with no divisions, or keep it on to see where one topic ends and another begins.</li>
+        <li><strong>Show Headings</strong>... the document has topic headings scattered through it. Turn this off for a continous reading experience </li>
         <li><strong>Expand Additionals</strong>... opens or collapses every additional section at once. </li>
       </ul>
       
@@ -1810,20 +1810,6 @@ function init() {
   showIntroIfNeeded();
   document.getElementById('introBtn').addEventListener('click', dismissIntro);
   
-  // ============================================  
-// DEFAULT STATES  
-// ============================================  
-
-// Default: Expand all
-const expandToggle = document.getElementById('expandToggle');
-expandToggle.checked = true;
-setAllAdditionals(true);
-
-// Default: Continuous mode (hide discrete headings)
-const discreteToggle = document.getElementById('discreteToggle');
-discreteToggle.checked = false;
-setDiscreteMode(false);
-}
 
 document.addEventListener('DOMContentLoaded', init);
 </script>
