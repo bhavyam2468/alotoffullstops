@@ -1,0 +1,1853 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reader</title>
+<style>
+  /* ============================================
+     CSS CUSTOM PROPERTIES
+     ============================================ */
+  :root {
+    --transition-speed: 300ms;
+    --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+    --radius: 8px;
+    --radius-sm: 6px;
+    --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    --font-size-body: 17px;
+    --font-size-small: 14px;
+    --font-size-h1: 28px;
+    --font-size-h2: 22px;
+    --font-size-h3: 18px;
+    --line-height: 1.75;
+    --content-max-width: 680px;
+    --progress-height: 3px;
+  }
+
+    /* Intro text styles */
+  .intro-text {
+    max-height: 55vh;
+    overflow-y: auto;
+    padding-right: 8px;
+    margin-bottom: 4px;
+  }
+  
+  .intro-text p {
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin-bottom: 14px;
+  }
+  
+  .intro-text p:last-child {
+    margin-bottom: 0;
+  }
+  
+  .intro-text em {
+    font-style: italic;
+    color: var(--text-muted);
+  }
+  
+  .intro-text strong {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+  
+  .intro-text blockquote {
+    border-left: 3px solid var(--accent);
+    padding: 10px 14px;
+    margin: 12px 0;
+    background: var(--accent-subtle);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+  
+  .intro-text ul {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0 14px;
+  }
+  
+  .intro-text ul li {
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+    line-height: 1.6;
+    padding: 4px 0 4px 16px;
+    position: relative;
+  }
+  
+  .intro-text ul li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 12px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  
+  .intro-divider-line {
+    text-align: center;
+    color: var(--text-muted) !important;
+    letter-spacing: 4px;
+    margin: 20px 0 !important;
+  }
+  
+  .intro-text::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  .intro-text::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .intro-text::-webkit-scrollbar-thumb {
+    background: var(--border-light);
+    border-radius: 2px;
+  }
+  
+  .intro-card h2 {
+    margin-bottom: 16px;
+  }
+  
+  /* Dark theme (primary) */
+  [data-theme="dark"] {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #242424;
+    --bg-tertiary: #2e2e2e;
+    --bg-hover: #333333;
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0a0;
+    --text-muted: #707070;
+    --accent: #c47a3a;
+    --accent-muted: #a06830;
+    --accent-subtle: rgba(196, 122, 58, 0.12);
+    --accent-subtle-hover: rgba(196, 122, 58, 0.2);
+    --border: #2e2e2e;
+    --border-light: #383838;
+    --bar-bg: #1a1a1a;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-menu: 0 4px 20px rgba(0,0,0,0.5);
+    --collapse-chevron: #707070;
+    --grain-opacity: 0.03;
+  }
+
+  /* Light theme */
+  [data-theme="light"] {
+    --bg-primary: #f5f0eb;
+    --bg-secondary: #ece6df;
+    --bg-tertiary: #e4ddd5;
+    --bg-hover: #ddd6cd;
+    --text-primary: #1a1a1a;
+    --text-secondary: #555555;
+    --text-muted: #888888;
+    --accent: #b86e2e;
+    --accent-muted: #9a5c26;
+    --accent-subtle: rgba(184, 110, 46, 0.1);
+    --accent-subtle-hover: rgba(184, 110, 46, 0.18);
+    --border: #d9d2c9;
+    --border-light: #e0d9d0;
+    --bar-bg: #f5f0eb;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-menu: 0 4px 20px rgba(0,0,0,0.12);
+    --collapse-chevron: #999999;
+    --grain-opacity: 0.04;
+  }
+
+  /* ============================================
+     RESET & BASE
+     ============================================ */
+  *, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    font-family: var(--font-body);
+    font-size: var(--font-size-body);
+    line-height: var(--line-height);
+    color: var(--text-primary);
+    background-color: var(--bg-primary);
+    transition: background-color var(--transition-speed) var(--ease),
+                color var(--transition-speed) var(--ease);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  /* Subtle grain texture overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: var(--grain-opacity);
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 256px 256px;
+  }
+
+  /* ============================================
+     PROGRESS BAR
+     ============================================ */
+  .progress-bar-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: var(--progress-height);
+    background: var(--border);
+    z-index: 1001;
+    transition: background-color var(--transition-speed) var(--ease);
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    transition: width 150ms var(--ease),
+                background-color var(--transition-speed) var(--ease);
+    will-change: width;
+  }
+
+  /* ============================================
+     TOP BAR
+     ============================================ */
+  .top-bar {
+    position: fixed;
+    top: var(--progress-height);
+    left: 0;
+    width: 100%;
+    height: 48px;
+    background: var(--bar-bg);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    z-index: 1000;
+    transition: background-color var(--transition-speed) var(--ease),
+                border-color var(--transition-speed) var(--ease);
+  }
+
+  .top-bar-title {
+    font-size: var(--font-size-small);
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.01em;
+    transition: color var(--transition-speed) var(--ease);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 60%;
+  }
+
+  .menu-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    transition: background-color var(--transition-speed) var(--ease),
+                color var(--transition-speed) var(--ease);
+  }
+
+  .menu-btn:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  .menu-btn:active {
+    background: var(--bg-hover);
+  }
+
+  .menu-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* ============================================
+     SETTINGS MENU (floating)
+     ============================================ */
+  .menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1002;
+    display: none;
+  }
+
+  .menu-overlay.open {
+    display: block;
+  }
+
+  .menu-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.01);
+  }
+
+  .menu-panel {
+    position: absolute;
+    top: calc(var(--progress-height) + 48px + 8px);
+    right: 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-menu);
+    min-width: 220px;
+    padding: 8px 0;
+    opacity: 0;
+    transform: translateY(-8px) scale(0.97);
+    transition: opacity 200ms var(--ease),
+                transform 200ms var(--ease),
+                background-color var(--transition-speed) var(--ease),
+                border-color var(--transition-speed) var(--ease);
+  }
+
+  .menu-overlay.open .menu-panel {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  .menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background-color 150ms var(--ease);
+    user-select: none;
+  }
+
+  .menu-item:hover {
+    background: var(--bg-tertiary);
+  }
+
+  .menu-item-label {
+    font-size: var(--font-size-small);
+    color: var(--text-primary);
+    transition: color var(--transition-speed) var(--ease);
+  }
+
+  .menu-item-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    transition: color var(--transition-speed) var(--ease);
+  }
+
+  /* Toggle switch */
+  .toggle {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    flex-shrink: 0;
+    margin-left: 12px;
+  }
+
+  .toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+  }
+
+  .toggle-track {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--bg-hover);
+    border-radius: 11px;
+    transition: background-color 200ms var(--ease);
+    cursor: pointer;
+  }
+
+  .toggle-track::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    background: var(--text-secondary);
+    border-radius: 50%;
+    transition: transform 200ms var(--ease),
+                background-color 200ms var(--ease);
+  }
+
+  .toggle input:checked + .toggle-track {
+    background: var(--accent-subtle);
+  }
+
+  .toggle input:checked + .toggle-track::after {
+    transform: translateX(18px);
+    background: var(--accent);
+  }
+
+  .menu-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 0;
+    transition: background-color var(--transition-speed) var(--ease);
+  }
+
+  /* ============================================
+     CONTENT AREA
+     ============================================ */
+  .content-wrapper {
+    max-width: var(--content-max-width);
+    margin: 0 auto;
+    padding: calc(var(--progress-height) + 48px + 32px) 20px 80px;
+  }
+
+  /* ============================================
+     TYPOGRAPHY — ESSENTIAL TEXT
+     ============================================ */
+  .doc-title {
+    font-size: var(--font-size-h1);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    line-height: 1.3;
+    transition: color var(--transition-speed) var(--ease);
+  }
+
+  .doc-subtitle {
+    font-size: var(--font-size-body);
+    color: var(--text-muted);
+    margin-bottom: 32px;
+    transition: color var(--transition-speed) var(--ease);
+  }
+
+  .section-heading {
+    font-size: var(--font-size-h2);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-top: 40px;
+    margin-bottom: 16px;
+    line-height: 1.35;
+    transition: color var(--transition-speed) var(--ease),
+                opacity var(--transition-speed) var(--ease),
+                max-height var(--transition-speed) var(--ease),
+                margin var(--transition-speed) var(--ease);
+  }
+
+  .section-heading.discrete-hidden {
+    opacity: 0;
+    max-height: 0;
+    margin: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .essential-paragraph {
+    color: var(--text-primary);
+    margin-bottom: 18px;
+    transition: color var(--transition-speed) var(--ease);
+  }
+
+  .essential-paragraph:last-child {
+    margin-bottom: 0;
+  }
+
+  /* ============================================
+     COLLAPSIBLE — ADDITIONAL SECTIONS
+     ============================================ */
+  .additional-block {
+    margin: 20px 0;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    transition: border-color var(--transition-speed) var(--ease),
+                opacity var(--transition-speed) var(--ease),
+                margin var(--transition-speed) var(--ease);
+  }
+
+  .additional-block.all-collapsed .additional-content {
+    max-height: 0 !important;
+  }
+
+  .additional-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    cursor: pointer;
+    background: var(--accent-subtle);
+    user-select: none;
+    transition: background-color 200ms var(--ease);
+    gap: 12px;
+  }
+
+  .additional-header:hover {
+    background: var(--accent-subtle-hover);
+  }
+
+  .additional-summary {
+    font-size: var(--font-size-small);
+    font-weight: 500;
+    color: var(--accent);
+    flex: 1;
+    line-height: 1.4;
+    transition: color var(--transition-speed) var(--ease);
+  }
+
+  .additional-chevron {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    color: var(--collapse-chevron);
+    transition: transform 250ms var(--ease),
+                color var(--transition-speed) var(--ease);
+  }
+
+  .additional-block.expanded .additional-chevron {
+    transform: rotate(180deg);
+  }
+
+  .additional-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 350ms var(--ease);
+  }
+
+  .additional-content-inner {
+    padding: 16px;
+    color: var(--text-secondary);
+    font-size: var(--font-size-body);
+    line-height: var(--line-height);
+    transition: color var(--transition-speed) var(--ease);
+  }
+
+  .additional-content-inner p {
+    margin-bottom: 14px;
+  }
+
+  .additional-content-inner p:last-child {
+    margin-bottom: 0;
+  }
+
+  /* ============================================
+     INTRO OVERLAY
+     ============================================ */
+  .intro-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: var(--bg-primary);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    transition: opacity 400ms var(--ease);
+  }
+
+  .intro-overlay.hiding {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .intro-overlay.hidden {
+    display: none;
+  }
+
+  .intro-card {
+    max-width: 520px;
+    width: calc(100% - 40px);
+    padding: 32px 24px;
+  }
+
+  .intro-card h2 {
+    font-size: var(--font-size-h2);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 20px;
+  }
+
+  .intro-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .intro-step-num {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--accent-subtle);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .intro-step-text {
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+    line-height: 1.55;
+  }
+
+  .intro-step-text strong {
+    color: var(--text-primary);
+  }
+
+  .intro-btn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    margin-top: 24px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-size: var(--font-size-body);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 200ms var(--ease);
+    font-family: var(--font-body);
+  }
+
+  .intro-btn:hover {
+    background: var(--accent-muted);
+  }
+
+  /* ============================================
+     RESPONSIVE
+     ============================================ */
+  @media (min-width: 768px) {
+    .content-wrapper {
+      padding-left: 24px;
+      padding-right: 24px;
+    }
+
+    .top-bar {
+      padding: 0 24px;
+    }
+
+    .menu-panel {
+      right: 24px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    :root {
+      --font-size-body: 18px;
+      --font-size-h1: 32px;
+      --font-size-h2: 24px;
+      --content-max-width: 720px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- PROGRESS BAR -->
+<div class="progress-bar-container">
+  <div class="progress-bar-fill" id="progressFill"></div>
+</div>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <span class="top-bar-title" id="topBarTitle">Document</span>
+  <button class="menu-btn" id="menuBtn" aria-label="Settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="5.5" r="1.5"/><circle cx="12" cy="18.5" r="1.5"/>
+    </svg>
+  </button>
+</div>
+
+<!-- SETTINGS MENU -->
+<div class="menu-overlay" id="menuOverlay">
+  <div class="menu-backdrop" id="menuBackdrop"></div>
+  <div class="menu-panel">
+    <div class="menu-item" id="toggleTheme">
+      <div>
+        <div class="menu-item-label">Light Mode</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="themeToggle">
+        <span class="toggle-track"></span>
+      </label>
+    </div>
+    <div class="menu-divider"></div>
+    <div class="menu-item" id="toggleDiscrete">
+      <div>
+        <div class="menu-item-label">Show Headings</div>
+        <div class="menu-item-desc">Discrete section titles</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="discreteToggle" checked>
+        <span class="toggle-track"></span>
+      </label>
+    </div>
+    <div class="menu-divider"></div>
+    <div class="menu-item" id="toggleExpand">
+      <div>
+        <div class="menu-item-label">Expand Additionals</div>
+        <div class="menu-item-desc">Show all extra sections</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="expandToggle">
+        <span class="toggle-track"></span>
+      </label>
+    </div>
+  </div>
+</div>
+
+<!-- INTRO OVERLAY (shown once) -->
+<div class="intro-overlay" id="introOverlay">
+  <div class="intro-card">
+    <h2>Hi, welcome.</h2>
+    <div class="intro-text">
+    
+      <p><em>Note: I didn't get this document checked by Grammarly because it ruins ellipsis, and the doc doesn't contain any segment directly quoted from any sources or LLMs. So there might be a lot of grammatical inconsistencies. Deal with them.</em></p>
+      
+      <p>If you're reading this introduction, hi</p>
+      
+      <p>This is an informasiioon doc on Periods. Almost everything one needs to know is mentioned in it. But since it contains <em>almost everything</em> one needs to know... it's quite big.</p>
+      
+      <p>And since it's written by me... a human that isn't restricted by any corporation to make it professional or give it some particular structure, it's not that boring. That doesn't mean I'd be including memes or jokes, no. It's just readable and interesting, unless you're just not interested in periods.</p>
+      
+      <p>I wrote this in around a week, but it includes extensive research. And though it was not my priority to write this, I still ensured quality control. I can assure you that I didn't quote any website or LLM.</p>
+      
+      <p>I'm not mentioning my sources in the introduction as I've added them somewhere in the doc, and I haven't cited every website I visited because no one is interested in that and I'm not paid enough.</p>
+      
+      <p>I'm going into this in a non-structured way, and if you're treating this as medical advice... or, well, anything more than knowledge... you're dumb, because this is written by a 17 year old who turned 18 halfway through writing this (I wrote this in my birthday week). I'm not writing the exact science. For example I might say "estrogen pushes dopamine", which actually is:</p>
+      
+      <blockquote>Estrogen: increases dopamine synthesis in certain brain regions, increases dopamine receptor sensitivity, modulates serotonin transporters and receptor density.</blockquote>
+      
+      <p>But I'm just making a point, that's why I'd say it pushes dopamine and serotonin, because that is enough for me, and I'm writing this for myself. Everything I'm saying is credible and reliable if taken as knowledge and understanding, not notes. Doesn't mean I won't go deep enough...I literally mentioned the voltage of a neuron. It just means I won't go exact enough that my statements could be taken as rigid facts with no loopholes you could legally exploit, because currently they might.</p>
+      
+      <p>And I'm not going to make this "fun" or use metaphors like calling the uterus a VIP lounge for the fetus (while researching, a lot of LLMs referred to it as this) because this is meant for, again, information.</p>
+      
+      <p>For the research of this document I reached out to people on r/periods asking if anyone could volunteer to tell me about their experiences so I could gain some personal, authentic insight on both the day-to-day life or unique happenings. As expected, my post got removed in like 3 hours, which makes sense since Reddit isn't that safe. But before it did, a fellow woman actually volunteered and I had a voice chat with her, and it was actually helpful. I know this isn't my personal diary, but I just wanted to be thankful to them.</p>
+      
+      <p>While explaining how something has exceptions in case of people with a history of anxiety disorders, PTSD, or any kinds of adaptations, I realised this document is genuinely going to be so vast that I gave up for a moment. But since my entire point of writing this is to serve my feeling of helplessness for 20 minutes on a call with someone who could have experienced that, I'd have to cover a lot of stuff. Not everything... that would make this doc VERY long. But a lot of stuff.</p>
+      
+      <p>So yeah, I'm writing a research paper for y'all for free. Thank me for being free enough to pull such shit off. Try matching this level of freak. But yeah, my intent to write in the first place wasn't publishing... it was helping that 20 minutes of myself. Doesn't matter if it took me, according to my screentime, 27 hours of researching and typing, in around 5 days.</p>
+      
+      <p class="intro-divider-line">— — —</p>
+      
+      <p><strong>How this document works:</strong></p>
+      
+      <p>This document is divided into two layers throughout... <strong>essentials</strong> and <strong>additionals</strong>.</p>
+      
+      <p>The <strong>essentials</strong> are the main body of the document. They're what you see with every collapsible section collapsed. They are genuinely enough... what periods are, what happens, what takes place, how to help, everything.</p>
+      
+      <p>The <strong>additionals</strong> are the collapsible orange sections you'll see between paragraphs. They contain the <em>how</em> and the <em>why</em>... from basic mechanisms of the ovary to going as far out of topic as explaining how neurons fire and what their resting voltage is (negative 70 millivolts). Read them only if you're obsessively passionate about understanding this stuff. So if I say alcohol affects menstruation and you're struggling with both drinking and menstruation, it's worth expanding that additional section to understand what's going on and why.</p>
+      
+      <p><strong>A few controls you should know about:</strong></p>
+      
+      <p>There's a small <strong>menu button</strong> at the top right corner. Inside it you'll find three toggles:</p>
+      
+      <ul>
+        <li><strong>Light Mode</strong>... switches between dark and light theme.</li>
+        <li><strong>Show Headings</strong>... the document has topic headings scattered through it. Turn this off for a continuous reading experience with no divisions, or keep it on to see where one topic ends and another begins.</li>
+        <li><strong>Expand Additionals</strong>... opens or collapses every additional section at once. By default they're collapsed.</li>
+      </ul>
+      
+      <p>You can also tap any individual orange bar to expand just that one section.</p>
+      
+      <p>The thin bar at the very top of your screen is a <strong>progress bar</strong>... it tracks how far you've scrolled. If you expand additional sections, it adjusts because there's now more to read.</p>
+      
+      <p class="intro-divider-line">— — —</p>
+      
+      <p>So yeah...<br>
+        If you want to understand everything... read the doc.<br>
+        If you want to understand more than everything... expand the additional stuff.<br>
+        If you want facts... there's this thing called research, DIY.</p>
+      
+     
+    </div>
+    <button class="intro-btn" id="introBtn">Start Reading</button>
+  </div>
+</div>
+
+<!-- CONTENT AREA -->
+<div class="content-wrapper" id="contentWrapper">
+  <!-- Parsed content gets injected here -->
+</div>
+
+<script>
+// ============================================
+// CONTENT — PASTE YOUR RAW CONTENT BELOW
+// ============================================
+// FORMAT RULES:
+//   ## Heading        → section heading (toggleable via discrete mode)
+//   Normal text       → essential paragraph (blank-line separated)
+//   >>                → start of additional block
+//   <<                → end of additional block
+//   First line after >> becomes the collapsible summary/title
+//   Remaining lines become the expandable body
+//
+// EXAMPLE:
+//   ## Introduction
+//   
+//   This is essential text that always shows.
+//   
+//   This is another essential paragraph.
+//   
+//   >>
+//   Why this matters
+//   Here is the deeper explanation that most readers
+//   can skip. It provides background context.
+//   
+//   Another paragraph inside the additional block.
+//   <<
+//   
+//   Back to essential text here.
+//   
+//   ## Next Section
+//   ...
+
+const RAW_CONTENT = `
+## A Lot Of Full Stops.
+
+Cramps happen because prostaglandins, which are chemicals that tell the uterus to contract and shed its lining, get released. In some people they’re released in higher amounts, and more prostaglandins usually means stronger contractions. 
+
+A bit basics into periods is that... Periods or menstrual cycle is each month a female body going into a prepration for holding a fertilized egg to develop it into a human but failing to do so because lack of reproduction so just shedding out all the prepration... In the form of blood. 
+
+The period itself is a highly inflammatory event; it requires inflammation to shed the lining. Once the bleeding period stops, the Follicular Phase acts as a massive biological cooldown. Due to estrogen, a hormone,  the body returns to the baseline. The immune system shifts entirely out of "attack" mode and redirects all its resources into "tissue repair" mode.
+
+In the follicular phase, the uterus has a lining (uterine lining or endometrium) which thickens over time, it basically thickens adding nutrient rich blood and stuff for the expected fertilized egg, to support the potential embryo. it happens because of one of the two reproductive hormones in females: estrogen, which makes ovaries build follicles(sacs for containing eggs) and uterus build the lining. The follicular phase begins right around day 6 of the cycle. 
+
+>>
+How the uterus actually builds itself back up
+The lining is divided into two distinct layers. The bottom layer is the stratum basalis (the foundation). This layer never leaves the body; it survives the period and acts as the permanent blueprint. When the period ends, the uterus is basically a raw, open wound. As the dominant follicle in the ovary starts pumping out Estrogen, that Estrogen travels through the blood and hits the receptors in this foundation layer, acting as a powerful mitogen... a chemical that forces cells to divide rapidly. Estrogen’s only command right now is proliferation. It tells the foundation to frantically build a brand new upper layer, called the stratum functionalis, from scratch. 
+
+​As this new tissue stacks up, going from about 1 millimeter thick to around half a centimeter, it has to build its internals. The first piece of this is the glandular system. The uterine glands are essentially microscopic tubes designed to eventually hold nutrients for an embryo. Under the influence of Estrogen, these glands multiply and grow rapidly. However, they are completely empty right now, the nutrients and blood they get filled with, comes later. So far, they grow as straight, narrow, unbranched tubes.
+
+To keep the rapidly multiplying tissue (endometrium) alive, it needs a massive blood supply. the body grows arteries (spiral arteries) in a tightly coiled, spring-like shape. As the endometrium thickens day by day, these spiral arteries uncoil and stretch upward, weaving through the newly built glands to supply oxygen to the growing cells.
+<<
+
+## The Follicular Phase
+
+This whole lining is stimulated because of the presence and push of estrogen, one of the two reproductive hormone, which is responsible for a lot. Estrogen is released by egg containing follicles which do so when they are stimulated by a hormone named FSH (follicle stimulating hormone, literally) which is released by pituitary. Follicles slowly develop for around 3-4 months before entering their period saga... and every follicular, 1 out of 20ish follicles is chosen and releases the egg for ovulation. 
+
+So, if you bring some changes in your lifestyle which are meant to have positive effects on your menstruation, the changes might not take place or the effects might not appear for atleast 1 or as long as 4 straight months.
+
+>>
+Biology of the Follicular
+In particular, as soon as the previous period ends, pituitary gland notices hormones being at rock bottom and pushes FSH, short for Follicle stimulating hormone.
+Follicles are fluid filled sacs, a woman is born with 1-2 millions of these and everyday, even before puberty, a couple thousands of them die in the process of folliculogenesis which is basically the 90-120 day long journey to become a mature follicle and develop an FSH receptor
+When FSH is released, it reaches the follicles that recently completed the journey.(15-20)
+The more FSH a follicle recieves, the more estrogen it produces
+In day 8-10 estrogen levels go high enough that the pitruitary stops producing FSH (starvation period, stimulated by a hormone named inhibin) and only one, the most healthy with the most FSH receptors of the 15-20 follicles survive and the rest get dissolved in the body(Atresia, the process) whereas the dominant one pushes estrogen
+<<
+
+The key thing to note again is that the egg thats in the follicle now, has the health that the body had 3 months ago, since the follicle went into the journey back then.
+
+Which actually, is kinda cute... like... 3 months ago, 20 follicles started developing, they had been developing ever since and they were nourished throughout, but towards the end, they were starved until one survived, which was the healthiest one and thus was chosen for fertilization.
+
+>>
+Shit that took place inside the body along this time
+Side by side, right around the beginning of the follicular phase, on day 6-8, right after the period ends, the estrogen is very low. The cervix is the gateway to the uterus. Most of the month, it acts like a guard, keeping a thick, acidic plug of mucus there to kill bacteria (and sperm). But as Estrogen rises during the follicular phase, it fundamentally changes the chemistry of this fluid. By ovulation, the mucus becomes alkaline (less acidic) and forms "highways" (microscopic channels) that actually nourish sperm and help them swim. A healthy vagina in general is acidic, pH 3.8 to 4.5 which can melt the sperm in 30-60 minutes, but the mucus that lowers off the cervix is alkaline and provides clean path.
+
+Basically, by the time previous period ends, estrogen is rock bottom and water content is 90%, which might seem good but its actually VERY dry, so much so that a layer of tangled protein form at the cervix, aka the mucus, which is dense and acidic, and if intercourse takes place, it can trap any sperm there
+
+By middle follicular phase estrogen is rising steadily, the water content increases to 95% and the mucus becomes cloudy, and feels like cream or lotion... the acidity also decreases
+<<
+
+By day 11-12, estrogen is peaking and the water content is 98%, the mucus is as slippery as it can be and the acidity changes into alkalinity... uh, it also aligns itself into channels so that sperm could have a better flow
+To prevent the body's immune system from attacking foreign sperm (which are technically invaders), peak Estrogen slightly suppresses the local immune response in the reproductive tract.
+
+Thus women, right around this time are a bit prone to diseases, especially related ones like yeast infections or BV (Bacterial Vaginosis), but in general too, its easy to get affected by cold in this phase.
+
+The interesting part is that even when the cervix is peak slippery and in favor of the sperm flow, it physically stops abdnormally shaped sperm.
+The cervical hole also dialates by this time.
+
+Accha also, before all of this, for pituitary to release FSH, it needs a stimulus, which is provided by hypothalamus, hypothalamus, a part in brain, releases GnRH, after ensuring 2 things
+1. Nutrition, thats why diet affects periods and can delay ovulation
+2. Safety, thats why stress can also affect periods 
+
+>>
+Biology, Evolution, depth, idk
+Now, hypothalamus also needs stimulus and i got to the cause of that too but thats related to general evolution puberty, i might add it later but its really not relavent right now.
+person to person
+
+>>
+Skin, healing, bones, gut... estrogen running the whole building
+Follicular phase basically drives the immune systems up, since the body doesnt expect or invite outer organisms like sperm anymore, they can let the immune system do its job without interrupting it. And the immune system firing up shows its effect everywhere, from basic injury recovery to regulating oil production, regulating digestion, it does everything
+
+Estrogen acts as a strict manager for the sebaceous glands in the skin. During the early and mid-follicular phase, it actively suppresses sebum (oil) production. The pores physically shrink, and the skin often feels tighter, more matte, or even a bit dry. Because the oil supply is cut off, the environment becomes completely inhospitable to acne-causing bacteria. Existing breakouts dry up and clear rapidly. However, as ovulation approaches and that mid-cycle testosterone spike hits, the oil production gets a sudden kickstart, which ironically lays the microscopic groundwork for the acne that will erupt two weeks later during the Luteal phase.
+
+Estrogen acts like a biological accelerant for macrophages (the cells that eat dead tissue and bacteria) and fibroblasts (the cells that spin new structural fibers). If a person gets a tattoo, a papercut, a scraped knee, or pops a pimple during the Follicular Phase, the skin will physically close, scab, and heal significantly faster than it would if the exact same injury happened right before their period. Also breasts feel fuller... not like they dont fill up with milk just the skin has been improving and Cells divide, connective tissue remodels, collagen activity increases. Breasts just become a bit more plump apparantly, if you get what i mean, of course its not really noticeable to everyone. If someone is supersensitive though, it can be painful too. What people may notice is very mild fullness, sometimes nothing at all. Skin can look slightly better because estrogen improves hydration and collagen.
+
+It actually goes way too deep as estrogen flushes the gut and improves digestion, it lubricates respiratory tracts, lungs, throat, and vocal cords too, it also paralyses the bone dissolving cells and during these two weeks body deposits a good amount of calcium increasing bone density.
+<<
+
+estrogen pumps the cell sensitivity for insulin, essentially one can drown in a tub of oil, sugar and refined carbs and everything will be used as a fuel and energy source instead of fat storage, since your body immediately absorbs all the food directly into cells.
+
+We love estrogen, hell yeah.
+
+## Ovulation
+
+Ovulation in particular is supposed to be a nice day
+The vulva is really wet because of the 98% water content in the cervical fluid 
+And women sometimes experience a discharge which feels like they just started their period but then they check and theyre like "huh"
+Apparantly it mimics the texture of raw egg whites, dilute shampoo, or semen.
+The cervical fluid moves physically up and the vaginal canal feels longer subjectively in intercourse or while inserting menstrual products.
+The tissue of the cervix feels physically softer to touch and the central opening slightly dialates. The blood flow in vulva increases and it can feel sensitive to friction. As estrogen peaks and progesterone rises, the increased blood flow also causes the nipples start to feel way more sensitive to touch, or even wind or breath or something. It can feel as heightened arousal or overly sensitive and even wearing clothes could feel uncomfortable due to the friction.
+
+Plus every sense that heightened in the follicular heightens even more in ovulation
+
+>>
+Ovulation spotting... when you think your period started early but it didnt
+A minority of individuals experience ovulation spotting. This presents physically as a very light, transient discharge of blood mixed with the clear cervical fluid. It typically appears as light pink or brown streaks when wiping and lasts for less than a day. This is a physical result of the sudden, brief drop in estrogen that occurs immediately after the follicle releases the egg, causing a microscopic shedding of the uterine lining before progesterone takes over to restabilize it.
+<<
+
+## The shift
+
+Libido and sexual activity increases often accompanied with restlessness, people mention the urge to exercise or finding just any way to expend energy. 
+And by the end of the ovulation, body enters the luteal.
+
+>>
+Okay a bit of personal question... 
+Can women like hack it? Yknow like... if mittelschmerz happens, it essentially gives them almost a very close prediction of when ovulation is going to happen. So anyone on diet can enjoy cheat day, anyone wanting a pregnancy can have sex.... since in other phases crevix can stop sperm or other stuff can happen.. and sperm only stays alive for 5 days that too if not dissolved, if one has sex right before ovulation, that boosts chances by alot...
+Ovulation can also be predicted if one's cycles are regular or one can actually feel the mood changes, also i heard from a lot of men "if youre aware youre gonna be pissed since its youre periods, why cant you just turn it off", and it should really be obvious, self awareness doesnt solve any problems, in fact it makes them worse by making you feel helpless... and its obvious because anyone who has ever suffered from addictions of even basic stuff like procrastination has been in that place, yall just dont self reflect enough.
+
+Returning, apparantly hunger flows rather abruptly, since every kind of carb source is not ending up as fat reserve and is just being used for energy, in initial days of follicular women dont feel really hungry, but as ovulation approaches, hunger takes a hit as the body is expecting need of high energy and thus prepares for it.
+<<
+
+In the follicular, the body's temp drops, it is at its lowest baseline of the month during these two weeks, but as soon as ovulation takes place, the core temp rises to warm... which happens because body shifts from estrogen to progesterone, which is a "thermogenic" hormone and it fires up basal metabolic rate (bmr) and burns more calories just while sitting still... the reason why progesterone stimulates the hypthalamus to fire up the heat is to create a more hospitable enviornment for the little one, which the body expects every month.
+
+Based on my knowledge so far, ive inferred cycle regularity is directly proportional to the ideal experiences because it often correlates with healthy and stable hormone signaling.. so like, a woman experiencing cycles very regularly *mostly* has these physical and mental effects, but again, its humans, its not always the same.
+
+## Now the important part.
+
+Nothing that i said so far is universally true, literally anything can affect periods. ANYTHING. Like its genuinely crazy. Hydration, diet, sleep, meds, alcohol consumption, smoking, related conditions like pcos, unrelated conditions like arthritis, general routine, occupation, physical health, mental health, sexual health. Anything. Somethings can change the length of the cycle, others can change the mood, some can change the amount of pain, the entire experience of periods is so so so so so much variable. But it sure the fucking hell isnt a disease, 
+yeah okay let me address that part of the problem.
+
+I dont think any fucker with the traditional stigma of treating women like untouchable or impure will read this, but if they are.. they or anyone who treats it like a disease or a liability. Or anyone who refuses to act decently, calls it gross, gets disgusted, jokes around someone taking it seriously and getting uncomfortable, minimizes it saying "everyone has it" or "just take pills", forces productivity in a bad phase, sexualize, spread misinfor out of hatred or incel behavior, or weaponises periods and uses them to invalidate emotions.
+
+Anyone reading this doc, if youre among one of them, let me tell you, youre a shitty person. I am not going to add an explanation for it. Im not going to add any comments for you after this. Just know that i hate you, youre a terrible human, and you sure as hell dont deserve empathy of other people in any phase of your life.
+
+Anyways, Yknow follicular phase is by FAR the most variable phase of the periodic cycle
+It can range from as low as 10 to as much as 30 (yes) days.
+The reason essentially rounds back to my previous mention of GnRH.
+
+Remember follicle selection? Where out of 15-20, 1 was the chosen one, that whole process depend on the integrated output of GnRH pulse frequency/amplitude, FSH availability, and ovarian responsiveness. Anything that slows GnRH drive, blunts FSH, or impairs orvarian processes stretches the phase. Conversely, accelerated recruitment (eg. higher baseline FSH) can shorten it.
+
+Compared to luteal phase, where the length of the entire phase is roughly (not precisely) dependent on one variable, whereas in follicular, the brain will just refuse to drop the egg (sloppy framing, but in my defence, i JUST explained everything) unless the conditions are absolutely ensured.
+
+>>
+What happens when the body doesnt have enough fuel for a cycle
+Growing the dominant follicle and growing uterine lining requires massive cellular energy. And thus the body needs calories. Which is detected by a hormone produced by fat cells named leptin. Inconsistent diet, deficit of calories, undereating drops leptin levels. Which signals brain to force the reproductive cycle.
+
+Even exercise pushes a similar alarm. Now theres a difference between hitting the gym to maintain health vs reaching your absolute physical limits. Net lack of fuel triggers leptin and brain shuts off reproduction
+
+The first question in my mind to this was, can you stimulate it?
+And yes, if a person chronically starves their system, maintains a severe caloric deficit, or pushes their physical exertion so far beyond their fuel intake that they have zero energy reserves, the brain will completely shut down the menstrual cycle. Its a documented medical condition called Functional Hypothalamic Amenorrhea (FHA).
+
+But.
+But, if one does this frequently enough, in a few years, their body skeleton will be as hollow and fragile as an eight year old, their bones will be as snappable as chalk. Brainfog will go up crazy high, and the risk of heart disease would increase tremendously. Because it not only stops the bleeding part of menstrual cycle, but it also stops estrogen. And i dont know if you noticed, but estrogen is pretty damn important. Also youre starving yourself, you cant casually ignore that.
+<<
+
+Stress triggers cortisol, and cortisol... It physically binds to receptors in the brain and blocks the release of the reproductive hormones needed to trigger ovulation. A highly stressful week can literally freeze a follicle in its tracks, delaying ovulation, and consequently delaying the next period by the exact amount of time the person spent in that high-stress state.
+
+I believe illness is pretty intutive as it just redirects the entire immune system to push energy in one place thus signalining the unavailability of energy in others.
+
+>>
+Deep into sleep (as in the topic)
+Sleep, okay firstly, the brain’s hypothalamus releases GnRH in precise pulses about once every 90 minutes during the early Follicular Phase. The metronome controlling this tempo is the circadian rhythm, so yeah.
+Secondly, sleep deprivation causes release of cortisol.
+
+It actually honestly goes way too deeper... The human body actually has multiple clocks. There is the master clock in the brain (the suprachiasmatic nucleus), but the ovaries literally have their own peripheral biological clocks.
+But im tired and its a bit far from context.
+
+melatonin, melatonin is just the chemical that makes you drowsy, but its a chemical shield for the follicle produced only during deep sleep in darkness.
+<<
+
+Estrogen is exitatory. It could lift up the mood and bring a positive glow for someone but it can also overwhelm someone who is already high on anxiety, like caffiene does with jitters.
+
+For someone with an anxiety disorder, ADHD, or who is just enduring a high-stress period, adding a powerful chemical stimulant does not create clarity; it creates overwhelm-th..?
+​
+Instead of feeling motivated to start a project, the extra neural connectivity causes racing thoughts. The brain processes too much information too quickly, leading to decision paralysis and overthinking. The social openness mutates into sensory overwhelm loud noises, bright lights, or chaotic environments become suddenly unbearable. The physical energy doesn't feel like a clean, productive drive; it feels like restless, jittery anxiety, like having too much caffeine on an empty stomach. It is the exact same hormone executing the exact same biological protocol, just a different stimulus.
+
+So again, someone going through even a textbook "good stage" of their menstrual cycle doesnt necessarily feel good, they can be fragile and have different experiences from the general audience, dont be a jerk and dont make them feel that they are being treated like shit. If you dont have the energy to deal with them, dont. Atleast dont half deal calling them out saying "well i also get tired, youre not the only one, sometimes i too have shitty phases". Your feelings arent invalid, but dont expect a haemophiliac to donate blood for you.
+
+## The Luteal Phase
+
+Getting into the luteal phase, 
+It occurs right after ovulation, essentially preparing the body for a possible pregnancy. It lasts 14 days. The egg gets delivered to the ampulla (outer part of fallopian) and waits for the sperm, if the sperm arrives, fertilization takes place, the fertilized egg attaches itself to the lining, releases a hormone named hCG and the body enters pregenancy exiting the scope of my document.
+
+Conversely, if the egg doesnt get fertilized, it get dissolved in 12-24 hours... and the dominant follicle that released the egg converts into a structure called corpus luteum by eating oil (absorbing cholesterol, yes) and fats... which majorly produces progesterone along with some estrogen. Progesterone is the defining hormone or the luteal phase and it has a rather stricter biological clock, so the luteal phase isnt as variable and unpredictable as the follicular. The corpus luteum will die in 10-14 days and that period remains unaffected by diet/stress
+
+>>
+Pure Biology
+Progesterone is almost the polar opposite of estrogen. Progesterone crosses the blood-brain barrier and converts into a neurosteroid called Allopregnanolone. This chemical targets the GABA receptors in the brain triggering GABA A, the temporary inhibitor, which works exactly how i mentioned about the inhibitors, chloride ion channel
+
+GABA, btw, is the exact same receptors targeted by alcohol and anti-anxiety medications like Xanax or Valium. It acts as a powerful CNS depressent.
+And its a sexy name.
+
+The GABA-A receptor isn't just one thing.
+
+For most people, Allopregnanolone binding to GABA-A receptors does produce calm. But in people with anxiety disorders, particularly those with a history of trauma, PTSD, or certain genetic variants, the GABA-A receptor has actually adapted to chronic anxiety. The receptor's subunit composition physically changes over time in anxious brains. It rewires itself.
+
+So when Allopregnanolone floods these already adapted receptors, instead of producing sedation and calm, it produces a paradoxical excitatory response. The brake becomes a gas pedal. This is actually the same reason some people get more anxious on Xanax or feel weird on alcohol instead of relaxed  same mechanism, same receptor, different hardware.
+
+Then dissociation enters.
+The CNS suppression is real and it does land, just not as calm. Instead it lands as... disconnection. The brain is being chemically slowed down, but the anxiety signals are still firing. So you get this horrible combination where you feel detached from yourself, emotionally numb, foggy, but also internally terrified. Like being wrapped in wet cement while something is screaming inside it.
+That's dissociation. And it's deeply disorienting because it doesn't feel like anxiety from the outside. The person might go quiet, seem "fine", seem distant. But inside the experience is closer to "I don't feel real right now and I don't know why and I can't explain it.
+
+The low mood part is connected but slightly separate. Progesterone suppresses dopamine signaling. For someone who already has a depleted or sensitive dopamine system which is common in anxiety disorders and depression that suppression hits harder. Not just "less motivated", more like a sudden grey flatness where nothing feels meaningful. Combined with the dissociation, it can genuinely feel like an identity crisis
+<<
+
+## When it isnt cozy
+
+The cruel irony is that the luteal phase sedation that helps a neurotypical person feel cozy and inward-focused is the exact same chemical process that pushes an anxious person into a dissociative, low, disconnected state. Same hormone. Same receptor. Completely different experience based on the brain it lands in.
+
+>>
+The Variations in way too depth
+The high-energy, fast-talking, risk-taking drive of the Follicular phase is completely muted. The social energy fades. The desire is no longer to go out and conquer; it is to stay home, seek comfort, and conserve energy. For some people, this sedative effect feels incredibly cozy and grounding. But for others, the sudden drop from Estrogen's sharp clarity into Progesterone's heavy sedation manifests as severe brain fog, lethargy, and a frustrating inability to focus or articulate thoughts quickly.
+
+Even if the pregnancy didnt take place, progesterone makes the body ready for one, even after the egg dissolves, the progesterone keeps filling up the uterine lining with nutrients, this is termed as secretion and is related to proliferation, done by estrogen. And since the body isnt yet aware about the fact that it isnt pregnant, it keeps on making conditions more inviting for the embryo, lwk motherly instincts...
+Nvm they literally are. Like actually, the body temprature rises to warm, to maintain that warm temp which requires more energy and thus hunger, and since progesterone is literally the opposite of estrogen, it makes digestion difficult... which also along with other causes add to constipation.
+
+​During the first half of the cycle, Estrogen built a dry, dense, "structural scaffold" (my.clevelandclinic.org) in the uterus (Proliferation). Now, Progesterone adds in "Secretion" (filling up). It commands those straight, empty uterine glands to twist, coil, and fill to the brim with a heavy, nutrient-dense fluid rich in glycogen. The blood vessels expand to their absolute maximum capacity. 
+
+The uterus is no longer a light, dry scaffold; it becomes a waterlogged, heavy sponge, perfectly prepped to catch and nourish an embryo. This physical retention of fluids and the swelling of the tissue is exactly why the lower abdomen feels so heavy, tight, and bloated in the week leading up to the period. The body is literally holding onto extra mass.
+
+Because the body is operating under the assumption that it might be pregnant, the metabolic engine is entirely reconfigured. Progesterone is a thermogenic hormone, meaning it raises the basal body temperature by about half a degree. The body is running a biological space heater to incubate a potential embryo, which burns through an extra 100 to 300 calories a day. To fund this, appetite violently spikes. 
+
+But unlike the Follicular phase, where insulin sensitivity was high and carbs were burned cleanly, Progesterone actually induces slight insulin resistance. The blood sugar becomes less stable. The brain demands fast, easily convertible energy to fund this internal heater, which triggers the infamous, uncontrollable cravings for high-fat, high-sugar foods like chocolate, chips, and heavy carbs. 
+
+Furthermore, because Progesterone relaxes smooth muscle tissue to keep the uterus from contracting and expelling a potential egg, it accidentally relaxes the smooth muscles of the digestive tract as well. The gut conveyor belt grinds to a sluggish crawl, leading to the constipation and severe gastrointestinal bloating that defines the Luteal experience.
+<<
+
+## Variability
+
+Again, progesterone is an inhibitor which is fundamentally the opposite of an exitator like estrogen, its not negative, just... comfortable, inward attention increases, Body craves softness over chaos... everything is sedated and flows smoothly, it affects everything, metabolic rewiring (which causes the temprature change) sleep architecture changes, appetite shifts, endurance vs power differences. I believe its intuitive enough at this point.
+
+Remember that alot of women actually have adapted to it, most hormonal effects are statistical tendencies, not experiences you can always observe externally. While some emotions leak out, one cannot always determine “today she’s follicular, today she’s luteal”
+
+It really varies person to person. As i said, every little difference in everyday life, reflects to periods. Inter-individual variability is real, and its massive. Some people track their cycle to the hour because differences are loud. Others couldn’t tell you what phase they’re in without an app. Some people feel loudly and express loudly. Some people dont feel it as loudly. Some people feel loudly and just dont have a safe space to express it, so they supress it and get used to coping.
+
+Brains compensate. Humans adapt baseline constantly. The nervous system smooths fluctuations so the person still functions. Huge biological swings become small subjective changes.
+
+Context overwhelms hormones. Sleep, stress, exams, relationships, nutrition all produce bigger signals than the cycle most days.
+
+Also, tone shifts are internal more than external. Motivation, tolerance for noise, emotional reactivity, body comfort. You can sit with someone for two hours and never see it.
+
+So prediction isnt the point, awarness is.
+Being unconditionally present for every kind of unexpected situation if you commit to it, youre not obligated to, but if you do, you have to be unconditional about it.
+
+not actively expecting anything or trying to intervene, but being aware and treating anything as normal and inclusive and not making the person feel alienated is the ideal thing.
+
+This paragraph was an opinion.
+
+## "Corpus Luteum has died"
+
+Day 28
+Or Day 1.
+
+Remember  that for the last three weeks, the brain has been bathing in a warm, protective chemical soup. It adapted to the high voltage clarity of Estrogen and the heavy, sedating blanket of Progesterone. The brain essentially built its entire reality around the presence of these hormones.
+
+On day 28, as the corpus luteum dies, everything abruptly comes to a halt. The production of these hormones falls off an absolute cliff. The brain goes into immediate, violent chemical withdrawal. 
+
+The withdrawal of dopamine should feel like losing the motivation to do anything
+The withdrawal of oxytocin should feel like being deprived of love, feeling unlikeable, isolated, lonely... so much so that asking help could feel like overreaching.
+The withdrawal of progesterone should feel like getting exposed, every raw nerve bare naked in cold
+The withdrawal of estrogen should feel like losing the will to do anything, losing the energy to carry off with talking, losing social energy
+The withdrawal of seretonin alongwith estrogen (PMS) should feel like losing bodily safety and general comfort.
+
+The withdrawal of everything altogether, should essentially feel like hell. And to some it does. Sometimes it does.
+To some, or sometimes, it feels casual, expected.
+But biologically, the central nervous system is left exposed and hyper sensitive to ANY stimulus.
+So much so as a spoon falling could make a woman cry.
+
+>>
+PMS and PMDD
+Premenstrual Syndrome (PMS) is not an excuse for a bad mood or a lack of emotional stability. Its a state of physiological vulnerability. Because Estrogen and Serotonin are inextricably linked, the sudden death of Estrogen drags the brain’s Serotonin levels down into the dark with it. The "happy" chemical, the molecule that provides contentment and emotional resilience, simply evaporates. At the exact same time, the drop in Progesterone starves the brain's GABA receptors, the exact receptors that usually keep anxiety in check. The brain completely loses its biological shock absorbers. A minor inconvenience that would normally bounce right off... a spilled cup of coffee, a slightly delayed text, a weird tone of voice, suddenly feels like a catastrophic emotional injury. The crying spells and the sudden flashes of intense irritability aren't overreactions; they are the desperate flailing of a nervous system that is trying to process reality without the chemicals it needs to feel safe
+
+About 5-10% women experience PMDD. Premenstrual Dysphoric Disorder. 
+
+Described as "An allergic reaction to being alive". In PMDD, the hormonal drop is the same, but the brain’s hardware is fundamentally, tragically hypersensitive to the shift. The crash doesn't just cause sadness; it causes absolute, crushing dysphoria. The brain actively turns against the host. It strips away all self-worth, replacing it with a profound, suffocating darkness. Women with PMDD report sudden, intense suicidal ideation, paralyzing panic attacks, and the terrifying sensation that they are entirely fundamentally broken. It is of course, completely out of their control, where they become trapped in a mind that is actively lying to them, telling them that nobody loves them, that their relationships are doomed, and that they are a burden. 
+
+And adding self awarness to it. Something that people use to call women out "you know its going to happen", "it happens every month", "youre aware"
+
+"If you are so aware, just ignore it, why cry"
+
+Apparantly, to a person experiencing PMS or PMDD, lying in bed feeling an existential dread so heavy it physically aches in their chest, since a part of them logically knows why it is happening. They know they are just days away from bleeding. They know that the moment the period starts and the Estrogen slowly begins to rise again, this fog will instantly lift like a fever breaking. But that logic does absolutely nothing to stop the bleeding of the mind in the present moment. Self-awareness does not synthesize Serotonin. Knowing you are biologically compromised doesn't make the weight of the sadness feel any less real or any less permanent while you are drowning in it. It is the ultimate loss of control over your own reality, a forced surrender to a chemical tide that you just have to survive until the machinery finally resets itself.
+<<
+
+## Menstruation
+
+I genuinely havent experienced this, to someone who has experienced this, or has been with people experiencing this, my words could either come off as relatable, or pretentious.
+But i didnt make it up, my sources for both the biology and the experiences are pubmed, oxford academia, clevelandclinic, hospital websites like fortis healthcare, open blogs, and following subreddits: r/women, r/periods, r/pms. And nothing is made up or exaggerated.
+
+The beginning of the period.
+
+Its basically mapped to day 1 to 6 instead of last 6 days because it overlaps with with early follicular
+And since a menstrual cycle is roughly categorised into only follicular and luteal phase, breaking the follicular from day 24-28 as early follicular and 1-8 as late follicular is rather abrupt. So the follicular, which biologically beings simultaneously with menstruation is mapped from day 1-day 6 being early follicular and day 7 to day 14 being late follicular.
+
+Anyways,
+
+The uterus contracts to help push out the lining and also compresses the blood vessels in it. When those blood vessels get squeezed, blood flow temporarily decreases. That reduced blood flow (ischemia) is what causes a lot of the pain. the lining is already breaking down hormonally... but the strong contractions plus reduced oxygen to the muscle make it hurt.
+
+>>
+The biology again
+The vascular supply of the upper endometrium (stratum functionalis) relies on spiral arteries. Their coiled structure allows them to stretch and accommodate the rapid thickening of the endometrium during the cycle without breaking.
+​
+During the luteal phase, a process named decidualization heavily alters the extracellular matrix surrounding these arteries. Progesterone acts as a continuous vasodilator, relaxing the smooth muscle cells in the arterial walls to maintain a high volume of blood flow to the newly formed decidual tissue. Consequently, the spiral arteries become highly dependent on circulating progesterone to maintain their dilated state
+
+Without progestrone, those aforementioned spiral arteries go into violent spasms. They physically constrict and twist shut. This triggers a state of localized hypoxia, or ischemia, meaning the blood supply to the upper layer of the uterus (the stratum functionalis) is entirely cut off. The cells that spent weeks multiplying and filling with heavy, nutrient-dense fluid are suddenly suffocated. They begin to rapidly die and break apart. The body realizes that everything it built in the past three weeks is useless, dying tissue sitting inside a vital organ. It has to be evicted immediately
+
+As the ischemia sets in, millions of cells begin to undergo necrosis (uncontrolled tissue death). As these cells suffocate and rupture, their outer membranes which are made of lipids (fats) break apart.
+<<
+
+Those contractions can actually be pretty intense. In some cases they can reach pressures similar to early labor contractions, but they’re obviously not the same as full active labor. This is a vasospasm. Since progesterone was a vasodilator and its absent now. It is like stepping heavily on a garden hose.
+
+Cramps range from “barely noticeable” to “I can’t stand up straight.” Both ends can be normal. ## What even is a period
+
+Cramps happen because prostaglandins, which are chemicals that tell the uterus to contract and shed its lining, get released. An enzyme named COX takes dead and rupturing cells and tissues in the uterus, and converts them into prostaglandin. Which acts as a chemical binding to the outer uterine wall which causes contractions... cramps. In some people they’re naturally released in higher amounts, and more prostaglandins usually means stronger contractions. 
+
+>>
+Biooologyyy
+If the uterus just ripped off a massive layer of tissue and let it bleed, the blood would immediately coagulate and form a massive, solid scab inside the organ. A solid mass cannot pass through the tiny, millimeter-wide opening of the cervix. To solve this, the uterus releases a specialized enzyme called plasmin. Plasmin is a highly aggressive biological blood thinner. Its entire job is to chemically slice through the fibrin proteins that cause blood to clot. As the dead tissue and blood pool in the uterus, the plasmin dissolves it into a thick, flowable liquid so it can safely drain out of the body. When a person passes a visible "clot" during a heavy period, it is not actually a true blood clot; it is a chunk of the endometrial tissue itself, or it simply means the sheer volume of the shedding lining is temporarily outpacing the body's ability to produce enough plasmin to melt it down.
+
+By contracting violently, the uterine muscle physically pinches those severed vessels shut. The blinding pain of a severe cramp is the feeling of an organ squeezing itself so hard that it temporarily cuts off its own blood supply, purely to stop the host from bleeding to death.
+
+But for some reason... prostaglandins are sloppy. They are incredibly potent, locally acting hormones, but because the uterus is producing such a massive quantity of them to clear out the lining, they inevitably leak into the general bloodstream. Once they are in the blood, they cause systemic chaos.
+<<
+
+Prostaglandins, the sloppy chemicals.. basically travel to every body part and causes contraction and dialation there.
+Literally
+Goes to intestine, causes contractions, gut spasms and the physical feeling is nausea and the infamous "period poops"
+Goes into brain, causes contraction and dialation, menstrual migrane
+Goes into upper thigh and lower back and causes vasoconstriction, causing muscles to go into a constant dull throbbing. The entire lower half of the body just.. hurts.
+
+The most common physical symptom is cramps, primary Dysmenorrhea... which are as i mentioned, contractions. One feels pain in the suprapubic (lower abdomen) region.
+
+Women physically feel the passage of menstrual fluid (semi fluid) through the cervix and vaginal canal. This fluid is a mixture of blood, cervical mucus, vaginal secretions, and endometrial tissue. Sometimes the clots passed are a bit bigger in size which causes sharp uterine pain and its distinctive from the normal cramps. Women also sometimes experience pelvis to be heavy due to excess bloodflow.
+
+>>
+Fucking Prostaglandins, the symptoms
+
+Since the prostaglandins enters alot of different parts, it has affect over alot of stuff. And since its production depends on a lot of factors, almost every experience is affected by daily routines.
+
+Prostaglandins entering gastrointestinal tract causes alot of problems, from difficulty in digestion, constipation, to severe vomiting. It can lead to trapped gas and bloating to a level that it feels physically uncomfortable.
+
+The drop in Progesterone can cause sudden thermoregulatory shifts.
+Fluid retention in body generally increases but its not noticed everywhere except breasts, which get tender or swelled sometimes (mastalgia), this peaks in the luteal and subsides a bit in menstruation, though soreness lingers sometimes.
+
+The skin may appear oily or break out in acne immediately prior to and during the first days of menstruation due to the relatively higher ratio of testosterone to estrogen and progesterone.
+
+There's secondary Dysmenorrhea too, this is severe, "debilitating" pain caused by underlying structural variations
+Endometriosis is one of the most common cause of Dysmenorrhea, Endometrial-like tissue grows completely outside the uterus (e.g., on the ovaries, fallopian tubes, or bowels). During menstruation, this ectopic tissue also bleeds and causes severe, localized internal inflammation and scar tissue formation. The pain is often described as sharp, stabbing, and unresponsive to standard painkillers.
+
+Adenomyosis, also a variation of periods... Endometrial tissue grows into the thick muscular wall of the uterus itself, causing the uterus to enlarge and resulting in heavily prolonged bleeding and severe cramping.
+
+And there are fibriods, non cancerous muscular tumors in the uterine wall that can cause intense pelvic pressure and extremely heavy bleeding.
+<<
+
+A standard period releases 30ml to 80ml of fluid total. Theres this thing which can be a one off but usually is a condition, its called menorrhagia, Individuals with menorrhagia lose significantly more, physically experiencing the rapid soaking of pads/tampons (requiring changes every 1-2 hours), passing clots larger than a quarter, and often developing iron-deficiency anemia, which presents as shortness of breath, dizziness, and chronic fatigue.
+
+Prostaglandin also works opposite of endrophines. It actually makes the pain receptors of the body more sensitive. And so it not just gives the body reasons to cry, it fuels it too.
+
+Okay, theres actually a scary thing too.
+Overlooking., 
+Many women have had wild experiences with their periods sometimes, so much so that they have really normalised alot of symptoms. But that raises a problem. If some problem is causing a symptom, a symptom thats common with the symptoms even minutely related to one's period. Theres a possibility that they just entitle periods as the reason of it and not discover the underlying problem for ages.
+
+Personally, a person told me that their friend was having chronic physical pain issues, and she went to the doctors who just said "yeah, periods" and flaired the cause of those symptoms to them, and it was ignored, but a day her appendix just bursted and she had a fatal medical emergency.
+
+And people don’t randomly blame everything on periods because they’re careless idiots. They do it because periods legitimately cause a ridiculous spread of symptoms. Pain, nausea, fainting, bowel changes, back pain, fatigue, mood swings, dizziness. The symptom overlap with half the abdominal emergencies is insane.
+So when someone thinks “it’s probably my period,” they’re often making a statistically reasonable guess… that sometimes turns out catastrophically wrong.
+
+And doctors? Same problem but with time pressure, pattern recognition, and bias. Sometimes it’s appendicitis, ovarian torsion, ectopic pregnancy, kidney stones, etc. Those are the horror stories you hear because they’re rare and memorable.
+
+So even if you normalise everything, women, please get periodic checkups, mental health, physical health, full body once every two months atleast, mention anything that feels even slightly off, new, or unbearable and seek medical help if needed, people care about yall. <3
+
+Anyways, yeah, thats how menstruation goes, its actually way more complicated just because it varies too much person to person and ill get to the details but let me wrap up for once. 
+
+>>
+the "Cycle"
+finally, right in the middle of the bleeding, the machinery resets. The brain’s hypothalamus, acting as the ultimate overseer, constantly audits the blood. It looks down at the absolute wreckage in the pelvis and notes that both Estrogen and Progesterone are at absolute zero. The negative feedback loop, the chemical signal that was telling the brain to hold off on starting a new cycle... is gone. The silence that started the destruction now triggers the rebirth. Recognizing that the environment is completely barren, the hypothalamus releases GnRH. The pituitary gland receives the signal and quietly drops a fresh pulse of Follicle Stimulating Hormone (FSH) into the bloodstream. The FSH bypasses the bleeding uterus, travels to the ovaries, and taps on the vault. A new cohort of fifteen to twenty primordial follicles wakes up. The race begins again, completely indifferent to the pain of the demolition happening right next door
+<<
+
+## Variations... the normal kind
+
+I feel ive established this that the length of a period, even in the healthiest of people can be irregular and its normal.
+Experiences like diarrhea or blackouts, all revolve around what doctors call "the normal range", and again, the follicular phase is mostly the one that vaires hugely, luteal is roughly the sams.
+
+In menstruation, the color shade of blood being different is normal, but you can actually derive something from the color, if its bright red, its fresh. If its darker, that just means its oxidised, older and has been in there for a bit longer. If it feels mixed with white, looks pink or anything like that, its the cervicular mucus coming along. And these are almost completely fine always. Black is also fine, its just been in there for longer, though worth keeping a check. Orange is actually a bit concerning because it could mean its mixed with infection in vaginal discharge, grey or green are possible, or any other color for that matter apart from shades of red should be alarming, definitely not normal, medical help, now.
+
+Sometimes women black out during or just before their period. For some people this is a one off, for others it's something that happens every single cycle like clockwork. Both are generally normal, and have their own reasons:
+
+Theres this "longest" nerve in body named vagus nerve, it connects brain and gut to the heart. Severe cramps can overstimulate it which makes it spasm and press brakes on heart rate and blood pressure simultaneously. Its called vasovagal response. Any kind of person nauseating or blacking out to a sight of something shocking is usually this.
+
+But it could also again be the sloppy prostaglandin which causes chaos everywhere can cause sudden vasodialation leading to sudden drop in blood pressure and yeah.
+
+anemia(heavy bloodloss) heavy bleeding loses blood volume. blood carries oxygen. Less blood means less oxygen to the brain. Iron deficiency anemia from chronic heavy periods is one of the most common causes of chronic fainting, and it's also one of the most overlooked because it builds up gradually. The person doesn't notice they're getting more fatigued, more breathless, more lightheaded over months because it happens so slowly. And then one day they stand up too fast and their brain just doesn't have enough oxygen to stay conscious.
+
+That happens normally to people with iron deficiency too. Get your iron up people, literally, low iron means low haemoglobin production, means low blood oxygen, means low oxygen to the brain, means getting up from using phone for long and just bwop, down on the floor.
+
+The fourth is blood sugar. Hormonal changes around menstruation destabilize blood sugar even in people who aren't diabetic. Low blood sugar hits the brain hard and fast, causing dizziness, weakness, and if it drops enough, fainting.
+
+What makes this crazy is that all four of these can happen at the same time. Someone with heavy flow loses blood volume (anemia pathway), has high prostaglandins (vasodilation pathway), experiences severe cramps (vagal pathway), and hasn't eaten properly (blood sugar pathway). The body handles one of these fine. All four together and it collapses.
+
+>>
+Spotting, flow volume, and duration... what's actually normal
+Spotting is pretty common, i talked about ovulation spotting in particular but im researching side by side in real time and now i realise that spotting can actually happen in any phase, so yeah, spotting is very common too.
+
+Variation in flow volume (usually 30-80ml) comes from a few main places. Theres a specific condition I did mention about, but there are one offs and normalaciew too. The thickness of the endometrium is the biggest one the more lining was built up in the luteal phase, the more there is to shed. Someone whose hormones ran higher than usual that cycle will often have a heavier period that cycle. The opposite is also true a lighter cycle often follows one where the hormonal signal was weaker or the follicular phase was disrupted.
+
+A normal period lasts anywhere from 2 to 7 days. Most people cluster around 4-5. Like cycle length, the "normal" range is wide enough that almost no one's period is genuinely abnormal just because of how long it lasts.
+
+What determines duration is essentially how long it takes the uterus to finish shedding the lining, which is a function of how thick the lining was, how efficient the contractions are, how well the plasmin enzyme is breaking down the tissue, and how much prostaglandin is driving the whole process.
+
+A period that consistently goes beyond 7 days, or that requires changing protection every hour for multiple hours, crosses into the clinical territory of menorrhagia and is worth investigating not because it's immediately dangerous, but because chronic blood loss at that level causes iron deficiency anemia which compounds every other symptom.
+<<
+
+Because the egg in any given cycle reflects the body's health from 3 months prior, and because the endometrium built in the luteal phase reflects what happened hormonally over the previous 4-6 weeks, a period is essentially a delayed report card on a window of your life that has already passed.
+
+A period that arrives after a particularly stressful exam season, or after a month of poor sleep and worse diet, will almost always be harder than baseline. Heavier, longer, more painful, more emotionally volatile. Not because something is wrong. Because the body is shedding a lining that was built under suboptimal hormonal conditions, and clearing out a system that was running on cortisol and caffeine for weeks.
+
+And conversely, a period that arrives after a good month, consistent sleep, decent food, low stress, is often noticeably easier. This is why the experience of periods can feel so inconsistent and random. It's not random. It's just that the cause is weeks in the past, so the connection isn't obvious.
+
+## Goes Crazy
+
+I can genuinely go on and on and on and it would never end, thus obviously i wont cover edge cases, the rule of thumb is, if anything feels new, unusual, abdnormal, or unbearable, seeking professional assistance/medical help should be everyone's go to. If one is pressurised by stigma from peers, parents, or any kind of enviornment, keep one trustable person you can talk to who can contact help on your behalf.
+
+Because periods could genuinely have crazy, crazy experiences. A girl once bled through her ears, nose, scalp and fingernails during her period. Crying with blood tears is common enough to be medically documented by now. Feeling hallucinations, tasting metal in everything, experiencing "zaps", significant pitch drop in voice, ulcers in cheeks, flu like symptoms. Theres genuinely no end.
+
+If youre not actually surprised so far, i saved one for last.
+A 25-year-old man in 1780 bled monthly from his right little finger and was reportedly diagnosed with "male vicarious menstruation" by his physician. The physician genuinely wondered if he would eventually have a menopause.
+
+So yeah. Uh.
+Variations.
+
+>>
+PCOS, endometriosis, amenorrhea... conditions worth knowing
+There's this condition called PCOS (Polycystic ovarian syndrome), which fundamentally just causes more LH then FSH, but it further leads to the production of androgens (testosterone like hormone) which have chronic effects on the body like irregular periods, facial/bodily hair growth, acne that doesnt leave, weight gain and even fertility issues. Theres misinfo about its diagnosis too... PCOS does not require cysts on the ovaries to be diagnosed. It doesn't require all three classic symptoms. Two out of three irregular ovulation, elevated androgens, or polycystic-looking ovaries on ultrasound is enough. 
+
+There's also endometriosis. Ive already mentioned this once, but it needs attention. Alot of the times as the uterus sheds the lining, a certain part of the blood or tissues backfire. Mostly the immune system notices it and destroys the displaced tissue. In endometriosis, thats not the case. There are other possible causes, but generally, the tissue sticks to any part, the fallopian tube, the ovaries, even external parts like the bladder. That tissue then every month behaves like endometrium, it thickens, and bleeds. It can also irritate the surroundings causing scar tissues around. And its pain is distinct from cramps. extreme pelvic pain, pain during sex, pain passing bowels or urinating in periods, and in some cases, infertility.
+
+Still, some people with endometriosis have no symptoms. Often, they find out they have the condition when they can't get pregnant or after they get surgery for another reason.
+
+which is yes, scary. but infertility as a symptom isnt that common. Endometriosis in itself has a deeper study, like theres a lot like the endometriotic tissue can produce its own local estrogen and general uterine lining cannot. So yeah, you could search about it.
+There are some plain defined conditions too
+
+Oligomenorrhea is the clinical term for infrequent periods specifically, cycles that are consistently longer than 35 days, or fewer than 9 periods in a calendar year. It's not absence. The machinery is still running. It's just running slowly, inefficiently, or incompletely.
+The distinction between a naturally long cycle and oligomenorrhea is consistency and pattern. A single 40 day cycle after a stressful month is normal variation. Cycles that are consistently 45, 50, 60 days long, month after month, is oligomenorrhea.
+And another named amenorrhea (complete abscense of periods...)
+Two types:
+Primary Amenorrhea
+Primary amenorrhea is when menstruation has never occurred by age 15 in someone who has otherwise begun puberty, or by age 13 if no signs of puberty have appeared at all.
+Secondary Amenorrhea is when someone who previously had regular periods stops menstruating for three or more consecutive months, or six months if their cycles were already irregular.
+This is far more common than primary amenorrhea and the causes are just anything causing variations in periods pushed to its extreme.
+Like PCOS
+One of the most common causes of oligomenorrhea. 
+
+And its fucked up
+The estrogen deficiency that underlies most cases is systemic. Estrogen protects bones, cardiovascular tissue, the brain, the vaginal mucosa, the bladder. 
+
+A 19 yo with amenorrhea has the estrogen levels of a menopausal woman. Her bones are losing density at a time when they should be building it. Her cardiovascular risk profile is shifting in the wrong direction. Her cognitive function and mood are affected. And ofcourse, you cant get pregnant if you arent ovulating.
+<<
+
+## What else man, what else
+
+Okay, since i cant really cover EVERY single case on the face of the earth, or every single condition, or every single lifestyle.
+I tried to go with the fundamentals. And theres a big stream, thats still not covered. 
+Medications and conditions.
+People on SSRIs like prozac, zoloft, or people on endoxifens, people on SERMs, people on any kinds of meds. People with any kinds of chronic diseases like artiritis, almost all the conditions really have a good overlap when it comes to them affecting the menstrual cycle. Since its mostly through similar pathways.
+
+So even if you have an idea of what your meds do or what all does your condition effect, like SSRIs block the synapse pathway and stops seretonin from getting absorbed so the body feels comfy, if you know this, i feel like explaining what seretonin does to periods, would help. Like knowing how those fundamentals are connected to periods would help
+
+>>
+The fundamentals i was talking about
+Serotonin stabilizes mood across the cycle and modulates pain perception; low serotonin amplifies cramp intensity and drives PMS/PMDD severity
+
+Dopamine suppresses prolactin
+
+Prolactin when elevated beyond breastfeeding context, directly shuts down the GnRH, the period either becomes irregular or stops.
+
+Cortisol competes with progesterone for the same precursor, steals pregnenolone, suppresses GnRH, sensitizes pain pathways, increases prostaglandins; chronic elevation from any source wrecks the cycle.
+
+Prostaglandins... the primary driver of cramping; anything that increases systemic inflammation increases prostaglandin production, which is why inflammatory conditions like arthritis, lupus, IBD, and Crohn's all worsen dysmenorrhea through the exact same COX enzyme pathway.
+
+Insulin; when resistant, drives androgen overproduction in the ovaries; relevant to PCOS, diabetes, metabolic syndrome, and anyone on medications that cause weight gain or blood sugar disruption.
+
+Thyroid hormones (T3/T4) directly regulate follicle development and uterine receptivity; disruption in either direction cascades into the entire cycle.
+
+Estrogen and progesterone receptor sensitivity... some conditions and medications alter how receptive tissues are to these hormones even when levels are normal; endometriosis developing progesterone resistance is the clearest example.
+<<
+
+## External variables... things that make it worse or better
+
+Anyways,
+A painful period isn't inevitable. It's partly biology, partly history, and partly a very long list of things that interact with each other in ways that are now, at least, documented.
+
+So please, women, take care of yourself. 
+Love y'all.
+
+The thing that affects periods the most is vasoconstriction.
+
+The fundamental cause of primary menstrual pain is the spiral arteries clamping shut, cutting off oxygen to the uterus. Any external substance that acts as a vasoconstrictor meaning it artificially shrinks blood vessels throughout the entire body will OBJECTIVELY multiply ischemic pain.
+
+Contenders contributing alot to it: Smoking, stress, alcohol, sleep, hydration etc
+
+Stress affects periods alot.
+Stress causes the body to feel unsafe and production of GnRH decrease and thus follicular gets delayed. And stress also increases the rate of severe cramps and chances of PMDD.
+Also cortisol, it fucks up alot, and yknow what else releases cortisol. High stress also literally blocks the body’s natural painkillers. It sensitizes the nerve endings. A cramp that would be a 4/10 on a calm day becomes an 8/10 on a stressful day because the nervous system is already in "Fight or Flight" mode.
+
+Statistically, smokers experience significantly higher rates of severe cramps simply because they are chemically inducing a more severe state of hypoxia in their own pelvic tissue. Smoking is probably the single most studied lifestyle variable in relation to menstrual pain, and it makes things worse very significantly, and it does it through multiple simultaneous pathways. 
+
+>>
+Smoking genuinely kills oh god.
+One of which is cortisol. "Smoking releases cortisol leading to low brain fog", this is partially true
+Smoking does release cortisol, and that increases concentration yes, but brain soon builds up tolerance and once tolerance is built, the "high concentration" state of a smoker is practically equal to the stable state of a non smoker, and the stable state of the non smoker has increased brainfog.
+
+And cortisol..., 
+It increases vaso constriction, it lowers pain tolerance, it increases prostaglanding production and we hate overproduction of prostaglandin. It increases muscle tension, and the biggest "cortisol steal"
+Cortisol and progesterone are produced from the same precursor.
+And increased production of cortisol decreases progesterone.
+And lower progesteron is practically destroying the luteal phase. And making pms more severe. 
+
+Smoking also directly boosts prostaglandin production. And Ive already discussed, higher prostaglandin = pain everywhere, intestine, gut, migranes,  long lasting cramps in the uterus, everywhere. 
+
+There's also a hormonal layer. The toxins in cigarette smoke disrupt estrogen metabolism in the liver. Estrogen is processed and cleared by the liver, and smoking impairs that clearance, leading to lower circulating estrogen levels over time.
+
+Low estrogen = bad immune system, poor uterine lining buildup, the follicular phase doesnt feel as refreshing as it should, the whole better skin tone, social energy that was supposed to ramp up in follicular due to high estrogen... just doesnt.
+
+And finally, 
+
+Nicotine is BY FAR the most potent chemical vasoconstrictor legally available. When it enters the bloodstream, it stimulates the adrenal glands to release epinephrine, which immediately forces blood vessels to narrow. Which is fucked up, because uterine walls are already contracting the vessels, add nicotine to it and they genuinely gasp for air.
+
+Unlike caffeine which is very dose dependent, like a single cup of coffee doesnt affect much, a single puff of a ciggerate can. Obviously increasing ciggerate causes worse periods, im just saying that there's no "safe dose"
+
+The good news, and it's genuinely good: the effects are largely reversible. Studies tracking women who quit smoking show their dysmenorrhea severity decreases significantly over the following cycles. The arteries relax. The prostaglandin production normalizes. The pain threshold recovers. Former smokers eventually return to approximately the same dysmenorrhea risk as never-smokers.
+
+Another thing worth mentioning: the relationship between stress and period pain creates a feedback loop that makes itself worse. Pain is a physical stressor, which increases cortisol, which amplifies pain perception, which increases cortisol further. A person experiencing severe cramps is simultaneously experiencing cortisol elevation from the pain itself, which then lowers their pain threshold, which makes the cramps feel worse. The body traps itself.
+
+So yeah.
+kill smoking please.
+and if youre stressed, find something, find someone.
+Do something that could actually calm your nervous system.
+You got this.
+<<
+
+Of course, there are other causes to vasoconstriction... cold weather, high sugar
+.. high insulin triggers inflammation... /sodium, dehydration... etc.
+High sodium generally tends to cause bloating, increasing sodium amounts during menstruation is not good, since a bloated uterus (more water retention, osmosis) can cause pain or heavy feeling.
+
+>>
+Sharaaabbb...
+Alcohol though, messes differently... Alcohol is a diuretic (makes you pee out water) and increases inflammation. Alcohol consumption can trigger an increase in prostaglandins (the pain chemicals). So, drinking might make someone feel numb mentally, but it is physically ordering their uterus to squeeze harder. And since its a diuretic, it causes dehydration too
+
+If a person is dehydrated, their blood volume drops and their blood becomes significantly more viscous. Thick, heavy menstrual fluid is physically harder to push out of the uterus. The myometrium (uterine muscle) is forced to contract much harder and more frequently to expel the thicker fluid, resulting in more severe cramping.
+
+Also, Ethanol is a literal toxin. When a person drinks alcohol, the liver immediately halts all other biological functions including the metabolism and excretion of estrogen to prioritize breaking down the ethanol. If alcohol is consumed frequently, estrogen remains in the bloodstream significantly longer than it should. This leads to a state of temporary "estrogen dominance." The immediate physical result is a thicker endometrial buildup, resulting in a heavier, clottier, and significantly more painful period when that tissue finally breaks down
+<<
+
+## Solutions
+
+Magnesium Drain: Alcohol depletes Magnesium. Magnesium is the "relax" mineral, we'll get to it, basically, Less Magnesium = more muscle tension = worse cramps.  The next day (hangover), the dehydration thickens menstrual fluids, making them physically harder to pass, which requires stronger contractions.
+
+>>
+The fundamentals again...
+Okay
+Magnesium.
+Basically, any kind of muscle contractions are governed by the cellular exchange of calcium and magnesium. Calcium enters a muscle cell to trigger contraction, and magnesium enters to push it out. So increasing magnesium calms cramps, in simple terms. Magnesium also downregulates COX enzyme which produces the sloppy chemical, prostaglandin. It also acts as a cofactor in synthesis of seretonin and dopamine. calcium is still required for the muscle to function properly. A severe calcium deficiency actually increases muscle cramping and nerve irritability. Vitamin D helps it, and vitamin D receptors are also present throughout the reproductive tract and adequate levels correlate with a reduction in severity of PMS and PMDD.
+
+Iron is the core component of hemoglobin, the protein in red blood cells responsible for carrying oxygen to tissues. During menstruation, the physical shedding of the endometrial lining results in a direct loss of whole blood. If the volume of blood lost exceeds the body's iron reserves, the bone marrow cannot synthesize new red blood cells fast enough.
+This creates a state of systemic mild hypoxia (low oxygen). Because the brain and muscles are operating on a marginal oxygen deficit, the physical result is acute lethargy, brain fog, lightheadedness upon standing, and general physical exhaustion.
+
+At the follicular level, zinc is required for the proper maturation of the egg. During menstruation, it also acts as a cox inhibitor essentially lowering prostaglandin.
+
+Proteins breaking down into amino acids take part in the development of alot of hormones, neurotransmitters and everythimg really
+
+And so idk you could literally google foods rich in calcium, magnesium, vitamin d, iron and zinc, and theyd help in long term, for sure.
+Also dark chocolate is magnesium dense, thats why some wome crave it during their period. Keep some around.
+<<
+
+## This.
+
+Some good overlapping foods are... kidney beans, lentils, dark chocolate, yogurt, milk, and nuts....
+
+We smoothly transitioned to cure, cute.
+
+Heat causes vasodilation, loosens spiral arteries, increases blood flow, oxgen returns to the tissues, comfort. Also heat receptors override pain receptors so the pain feels dull.
+
+Heating pads possibly, they help alot, hot water bottle, anything really
+Just take a towel, dip it in hot water, cover it with a new towel and keep it under abdomen..It forces blood back into the oxygen-starved tissue. Once oxygen returns, the pain signals stop. This is why the hot water bottle/rice sock is non-negotiable.
+
+Or a plastic bag polythene (please dont put boiling water on thin plastic) or a plastic bottle with hot water inside and wrapped with a thin towel on top for comfort would help 
+A better solution is like a rice sock, take a sock, fill it with rice, microwave for 30-60 seconds and done, coarse salt has higher specific heat capacity so i believe its a better alt to rice heh, also position, lying in the fetal position, knees close to chest helps
+
+When the uterus violently contracts, it yanks on these ligaments, pulling on the lower spine and abdominal fascia. Furthermore, standing upright forces the pelvic floor and abdominal muscles. Certain physical poses mechanically alter the geometry of the pelvis, taking tension off these ligaments, opening the spinal joints to relieve referred nerve pain, and reducing intra-abdominal pressure.....
+
+Fetal position, lying curling on one side with knees pulled to the chest.
+Child's pose, same but upright.
+Light cardio, helps loosen bloodvessels and increase flow, keyword "light", Like the baby pose, lying on bed in that with a heat bag is apparantly awesome.
+
+NSAIDs(ibuprofen, naproxen) ... how they work is just inhibiting prostaglandins... they wont work if you take them after the pain is 10/10, one has to take them pre emptively, 24-48 hours before the period begins
+
+High dose of magnesium, goated aparantly, google magnesium foods... rajma, peanutbutter, idk, Dark chocolate is good for it, low sugar, high magnesium, plus good mood, nice.. 
+
+Ginger is actually scientifically proven to be nearly as effective as some over-the-counter painkillers for cramps... ginger tea it is. Yeah it helps in shor5 term too, its a natural painkiller. Ginger is prostaglandins inhibitor too. Ginger ftw.
+Hydration helps, drinking more water reduces bloating 
+Potassium also helps, banana!!
+
+For long term, magnesium, hydration and omega 3 helps, they make everything diluted and less inflammatory. Omega 3 makes a different kind of prostaglandin release which is by nature, less inflammatory.
+
+For management: pads work on gravity and absorption, but long term exposure can lead to discomfort as difference in pH of the vulva leading to sometimes dermatitis.
+Tampons go inside and absorb not just blood but other vaginal fluid too, but again, long term exposure can make them become a breeding ground for bacteria(TSS) which can be lethal
+Menstrual cup: it uses suction and vacumm, so it doesnt completely ensure the absorption of everything, but it doesnt dry out the vaginal canal either, but its apparantly more hectic, sometimes more discomforting, and to some the suction increases cramps.
+
+
+Oxytocin and dopamine.
+increasing them decreases cortisol really helping it alot, so if you could give them even a safe space, a hug, or just presence when they need it, it could really help.
+Distraction can sometimes feel helpful, other times it feels alienating or insensitive, notice and adapt
+People feel comfort to differnt kinds of signals, dont comfort them the way youd want to be comforted. People have differnt kinds of love languages, sometimes its physical touch like hugs and stuff, sometimes its something like gifting or appreciations., sometimes being a good listener and what always helps is being unconditional about it.
+You dont have to do it, but if youre commiting to it, make it actually worthful.
+Remember, we dont expect, we accept.
+
+Not to intervene for everything
+But to be ready when youre asked to.
+Yay.
+Love it
+
+And to anyone going through any of these and feeling overwhelmed, reach out to your friends or something, it helps, sometimes. Hats off to every woman. You guys are really something.
+
+See y'all.
+`;
+
+// ============================================
+// PARSER
+// ============================================
+function parseContent(raw) {
+  const lines = raw.split('\n');
+  const blocks = [];
+  let i = 0;
+
+  // Skip leading empty lines
+  while (i < lines.length && lines[i].trim() === '') i++;
+
+  while (i < lines.length) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    // HEADING
+    if (trimmed.startsWith('## ')) {
+      blocks.push({
+        type: 'heading',
+        text: trimmed.slice(3).trim()
+      });
+      i++;
+      continue;
+    }
+
+    // ADDITIONAL BLOCK START
+    if (trimmed === '>>') {
+      i++;
+      // Skip blanks after >>
+      while (i < lines.length && lines[i].trim() === '') i++;
+
+      // First non-empty line = summary
+      let summary = '';
+      if (i < lines.length && lines[i].trim() !== '<<') {
+        summary = lines[i].trim();
+        i++;
+      }
+
+      // Collect body paragraphs until <<
+      const bodyParagraphs = [];
+      let currentParagraph = '';
+
+      while (i < lines.length && lines[i].trim() !== '<<') {
+        const bLine = lines[i].trim();
+        if (bLine === '') {
+          if (currentParagraph) {
+            bodyParagraphs.push(currentParagraph);
+            currentParagraph = '';
+          }
+        } else {
+          currentParagraph += (currentParagraph ? ' ' : '') + bLine;
+        }
+        i++;
+      }
+      if (currentParagraph) {
+        bodyParagraphs.push(currentParagraph);
+      }
+
+      // Skip the << line
+      if (i < lines.length && lines[i].trim() === '<<') i++;
+
+      blocks.push({
+        type: 'additional',
+        summary: summary,
+        paragraphs: bodyParagraphs
+      });
+      continue;
+    }
+
+    // BLANK LINE — skip
+    if (trimmed === '') {
+      i++;
+      continue;
+    }
+
+    // ESSENTIAL PARAGRAPH — collect continuous non-blank, non-special lines
+    let para = '';
+    while (i < lines.length) {
+      const pLine = lines[i].trim();
+      if (pLine === '' || pLine.startsWith('## ') || pLine === '>>' || pLine === '<<') break;
+      para += (para ? ' ' : '') + pLine;
+      i++;
+    }
+    if (para) {
+      blocks.push({
+        type: 'essential',
+        text: para
+      });
+    }
+  }
+
+  return blocks;
+}
+
+// ============================================
+// RENDERER
+// ============================================
+function renderContent(blocks) {
+  const wrapper = document.getElementById('contentWrapper');
+  wrapper.innerHTML = '';
+
+  blocks.forEach((block, idx) => {
+    if (block.type === 'heading') {
+      const h = document.createElement('h2');
+      h.className = 'section-heading';
+      h.textContent = block.text;
+      h.dataset.blockType = 'heading';
+      wrapper.appendChild(h);
+    }
+
+    else if (block.type === 'essential') {
+      const p = document.createElement('p');
+      p.className = 'essential-paragraph';
+      p.textContent = block.text;
+      p.dataset.blockType = 'essential';
+      wrapper.appendChild(p);
+    }
+
+    else if (block.type === 'additional') {
+      const container = document.createElement('div');
+      container.className = 'additional-block';
+      container.dataset.blockType = 'additional';
+
+      // Header (clickable)
+      const header = document.createElement('div');
+      header.className = 'additional-header';
+
+      const summarySpan = document.createElement('span');
+      summarySpan.className = 'additional-summary';
+      summarySpan.textContent = block.summary || 'Additional details';
+
+      const chevron = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      chevron.setAttribute('class', 'additional-chevron');
+      chevron.setAttribute('viewBox', '0 0 24 24');
+      chevron.setAttribute('fill', 'none');
+      chevron.setAttribute('stroke', 'currentColor');
+      chevron.setAttribute('stroke-width', '2');
+      chevron.setAttribute('stroke-linecap', 'round');
+      chevron.setAttribute('stroke-linejoin', 'round');
+      const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+      polyline.setAttribute('points', '6 9 12 15 18 9');
+      chevron.appendChild(polyline);
+
+      header.appendChild(summarySpan);
+      header.appendChild(chevron);
+
+      // Content
+      const content = document.createElement('div');
+      content.className = 'additional-content';
+
+      const inner = document.createElement('div');
+      inner.className = 'additional-content-inner';
+
+      block.paragraphs.forEach(pText => {
+        const p = document.createElement('p');
+        p.textContent = pText;
+        inner.appendChild(p);
+      });
+
+      content.appendChild(inner);
+      container.appendChild(header);
+      container.appendChild(content);
+
+      // Click handler
+      header.addEventListener('click', () => {
+        toggleAdditional(container);
+      });
+
+      wrapper.appendChild(container);
+    }
+  });
+}
+
+// ============================================
+// TOGGLE INDIVIDUAL ADDITIONAL
+// ============================================
+function toggleAdditional(block) {
+  const content = block.querySelector('.additional-content');
+  const inner = content.querySelector('.additional-content-inner');
+
+  if (block.classList.contains('expanded')) {
+    // Collapse
+    content.style.maxHeight = content.scrollHeight + 'px';
+    // Force reflow
+    content.offsetHeight;
+    content.style.maxHeight = '0';
+    block.classList.remove('expanded');
+  } else {
+    // Expand
+    block.classList.add('expanded');
+    content.style.maxHeight = inner.scrollHeight + 10 + 'px';
+    // After transition, remove fixed max-height so content can resize
+    const handler = () => {
+      if (block.classList.contains('expanded')) {
+        content.style.maxHeight = 'none';
+      }
+      content.removeEventListener('transitionend', handler);
+    };
+    content.addEventListener('transitionend', handler);
+  }
+  // Update progress after DOM settles
+  requestAnimationFrame(updateProgress);
+  setTimeout(updateProgress, 400);
+}
+
+// ============================================
+// EXPAND / COLLAPSE ALL
+// ============================================
+function setAllAdditionals(expanded) {
+  const blocks = document.querySelectorAll('.additional-block');
+  blocks.forEach(block => {
+    const content = block.querySelector('.additional-content');
+    const inner = content.querySelector('.additional-content-inner');
+
+    if (expanded && !block.classList.contains('expanded')) {
+      block.classList.add('expanded');
+      content.style.maxHeight = inner.scrollHeight + 10 + 'px';
+      setTimeout(() => {
+        if (block.classList.contains('expanded')) {
+          content.style.maxHeight = 'none';
+        }
+      }, 400);
+    } else if (!expanded && block.classList.contains('expanded')) {
+      content.style.maxHeight = content.scrollHeight + 'px';
+      content.offsetHeight;
+      content.style.maxHeight = '0';
+      block.classList.remove('expanded');
+    }
+  });
+  requestAnimationFrame(updateProgress);
+  setTimeout(updateProgress, 400);
+}
+
+// ============================================
+// DISCRETE / CONTINUOUS (headings visibility)
+// ============================================
+function setDiscreteMode(show) {
+  const headings = document.querySelectorAll('.section-heading');
+  headings.forEach(h => {
+    if (show) {
+      h.classList.remove('discrete-hidden');
+    } else {
+      h.classList.add('discrete-hidden');
+    }
+  });
+  requestAnimationFrame(updateProgress);
+  setTimeout(updateProgress, 350);
+}
+
+// ============================================
+// THEME
+// ============================================
+function setTheme(light) {
+  document.documentElement.setAttribute('data-theme', light ? 'light' : 'dark');
+  localStorage.setItem('reader-theme', light ? 'light' : 'dark');
+}
+
+// ============================================
+// PROGRESS BAR
+// ============================================
+function updateProgress() {
+  const fill = document.getElementById('progressFill');
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  if (docHeight <= 0) {
+    fill.style.width = '100%';
+    return;
+  }
+  const scrolled = window.scrollY / docHeight;
+  fill.style.width = Math.min(100, Math.max(0, scrolled * 100)) + '%';
+}
+
+// ============================================
+// MENU
+// ============================================
+function openMenu() {
+  document.getElementById('menuOverlay').classList.add('open');
+}
+
+function closeMenu() {
+  document.getElementById('menuOverlay').classList.remove('open');
+}
+
+// ============================================
+// INTRO
+// ============================================
+function showIntroIfNeeded() {
+  const seen = localStorage.getItem('reader-intro-seen');
+  const overlay = document.getElementById('introOverlay');
+  if (seen) {
+    overlay.classList.add('hidden');
+    return;
+  }
+  overlay.classList.remove('hidden');
+  overlay.classList.remove('hiding');
+}
+
+function dismissIntro() {
+  const overlay = document.getElementById('introOverlay');
+  overlay.classList.add('hiding');
+  setTimeout(() => {
+    overlay.classList.add('hidden');
+  }, 450);
+  localStorage.setItem('reader-intro-seen', 'true');
+}
+
+// ============================================
+// INIT
+// ============================================
+function init() {
+  // Parse and render
+  const blocks = parseContent(RAW_CONTENT);
+  renderContent(blocks);
+
+  // Set document title from first heading
+  const firstHeading = blocks.find(b => b.type === 'heading');
+  if (firstHeading) {
+    document.getElementById('topBarTitle').textContent = firstHeading.text;
+  }
+
+  // Restore theme
+  const savedTheme = localStorage.getItem('reader-theme');
+  if (savedTheme === 'light') {
+    setTheme(true);
+    document.getElementById('themeToggle').checked = true;
+  }
+
+  // Progress
+  window.addEventListener('scroll', updateProgress, { passive: true });
+  window.addEventListener('resize', updateProgress, { passive: true });
+  updateProgress();
+
+  // Menu button
+  document.getElementById('menuBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const overlay = document.getElementById('menuOverlay');
+    if (overlay.classList.contains('open')) {
+      closeMenu();
+    } else {
+      openMenu();
+    }
+  });
+
+  document.getElementById('menuBackdrop').addEventListener('click', closeMenu);
+
+  // Prevent menu panel clicks from closing
+  document.querySelector('.menu-panel').addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
+
+  // Theme toggle
+  document.getElementById('themeToggle').addEventListener('change', (e) => {
+    setTheme(e.target.checked);
+  });
+
+  // Make the whole menu-item row toggle-able
+  document.getElementById('toggleTheme').addEventListener('click', (e) => {
+    if (e.target.closest('.toggle')) return;
+    const cb = document.getElementById('themeToggle');
+    cb.checked = !cb.checked;
+    cb.dispatchEvent(new Event('change'));
+  });
+
+  // Discrete toggle
+  document.getElementById('discreteToggle').addEventListener('change', (e) => {
+    setDiscreteMode(e.target.checked);
+  });
+
+  document.getElementById('toggleDiscrete').addEventListener('click', (e) => {
+    if (e.target.closest('.toggle')) return;
+    const cb = document.getElementById('discreteToggle');
+    cb.checked = !cb.checked;
+    cb.dispatchEvent(new Event('change'));
+  });
+
+  // Expand all toggle
+  document.getElementById('expandToggle').addEventListener('change', (e) => {
+    setAllAdditionals(e.target.checked);
+  });
+
+  document.getElementById('toggleExpand').addEventListener('click', (e) => {
+    if (e.target.closest('.toggle')) return;
+    const cb = document.getElementById('expandToggle');
+    cb.checked = !cb.checked;
+    cb.dispatchEvent(new Event('change'));
+  });
+
+  // Intro
+  showIntroIfNeeded();
+  document.getElementById('introBtn').addEventListener('click', dismissIntro);
+  
+  // ============================================  
+// DEFAULT STATES  
+// ============================================  
+
+// Default: Expand all
+const expandToggle = document.getElementById('expandToggle');
+expandToggle.checked = true;
+setAllAdditionals(true);
+
+// Default: Continuous mode (hide discrete headings)
+const discreteToggle = document.getElementById('discreteToggle');
+discreteToggle.checked = false;
+setDiscreteMode(false);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
